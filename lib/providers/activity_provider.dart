@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/activity.dart';
 import '../services/location_service.dart';
 import '../services/database_service.dart';
@@ -50,16 +51,27 @@ class ActivityProvider extends ChangeNotifier {
     }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
-
+  ActivityProvider() {
+    _loadWeight(); // 👈 load ngay khi khởi tạo
+  }
   void setActivityType(ActivityType type) {
     _selectedType = type;
     notifyListeners();
   }
-
-  void setWeight(double weight) {
-    _weightKg = weight;
+  Future<void> _loadWeight() async {
+    final prefs = await SharedPreferences.getInstance();
+    _weightKg = prefs.getDouble('weight_kg') ?? 60;
     notifyListeners();
   }
+
+  Future<void> setWeight(double value) async {
+    _weightKg = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('weight_kg', value); // 👈 lưu mỗi khi thay đổi
+  }
+
+
 
   Future<bool> startTracking() async {
     final hasPermission = await _locationService.requestPermission();
